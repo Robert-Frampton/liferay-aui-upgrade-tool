@@ -5,6 +5,7 @@
         http = require('http-get'),
         path = require('path'),
         program = require('commander'),
+        spawn = require('child_process').spawn,
         targz = require('tar.gz'),
 
         outputDir,
@@ -63,30 +64,31 @@
                         dirToWrapBin,
                         dirToWrapData,
                         extractedFileName,
+                        FILES,
+                        npm,
                         tgz;
 
                     // file has been downloaded, extract it, if not Windows, copy it if so
                     extractedFileName = path.normalize(fileName + '_extracted');
 
                     fs.removeSync(extractedFileName);
-
                     fs.mkdirsSync(extractedFileName);
 
                     if (platform.indexOf('win') !== 0) {
                         console.log(extractedFileName);
 
                         tgz = new targz().extract(fileName, extractedFileName, function(error){
-                            debugger;
+                            //debugger;
                             if (error) {
                                 console.log(error);
                             }
                             else {
                                 console.log('The extraction has ended!');
 
-                                dirToWrap = path.normalize(outputDir + path.sep + fileName + '_wrapped');
+                                dirToWrap = path.normalize(fileName + '_wrapped');
 
                                 dirToWrapBin = dirToWrap + '/bin';
-                                dirToWrapData = dirToWrap + '/bin';
+                                dirToWrapData = dirToWrap + '/data';
 
                                 fs.mkdirsSync(dirToWrapBin);
 
@@ -99,17 +101,45 @@
                                         console.error(error);
                                     }
                                     else {
-                                        console.log('Creating wrapped tar.gz file');
+                                        // copy itself
 
-                                        tgz.compress(dirToWrap, path.normalize(program.dist + '/lut' + '_' + platform + '.tar.gz'), function(error){
+                                        debugger;
 
-                                            if (error) {
-                                                console.log(error);
+                                        FILES = require(path.resolve(__dirname, 'export.json')).FILES;
+
+                                        FILES.forEach(
+                                            function(file) {
+                                                fs.copy(file, dirToWrapData, function(error) {
+                                                    FILES.splice(FILES.indexOf(file));
+
+                                                    if (!FILES.length) {
+                                                        // install dependencies
+
+                                                        npm = spawn('npm', ['install', 'commander', 'fs-extra', 'walkdir'], {
+                                                            cwd: dirToWrapData
+                                                        });
+
+                                                        npm.on('close', function (code) {
+                                                            if (code === 0) {
+                                                                console.log('Creating wrapped tar.gz file');
+
+                                                                tgz.compress(dirToWrap, path.normalize(program.dist + '/lut' + '_' + platform + '.tar.gz'), function(error) {
+                                                                    if (error) {
+                                                                        console.log(error);
+                                                                    }
+                                                                    else {
+                                                                        console.log('The compression has ended!');
+                                                                    }
+                                                                });
+                                                            }
+                                                            else {
+                                                                console.log('npm finished with code: ' + code);
+                                                            }
+                                                        });
+                                                    }
+                                                });
                                             }
-                                            else {
-                                                console.log('The compression has ended!');
-                                            }
-                                        });
+                                        );
                                     }
                                 });
                             }

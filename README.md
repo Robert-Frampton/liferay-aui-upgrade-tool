@@ -38,7 +38,7 @@ If you don't have a prepared package for your OS, then you can download the tool
 1. Install NodeJS
 2. Clone the repository (or just download the provided zip file from GitHub) and navigate to its directory
 3. Install the reqiured modules:  
-$ npm install commander fs-extra walkdir yuitest sha1
+$ npm install commander fs-extra walkdir yuitest sha1 ncp tar.gz http-get yui@stable
 4. Execute "node bin/laut.js -f projects/liferay/liferay-plugins"
 
 where "projects/liferay/liferay-plugins" is the directory which contains the Portlets which have to be migrated.
@@ -79,6 +79,7 @@ What it does
 5. Replaces ".selector-button input" in all places, where we attach delegate events (or single listeners via .on) with ".selector-button"
 6. Changes "handler: function(..."  to on : { click: function(... }. This is usually used on adding children to AUI Toolbar. See [here](https://github.com/ipeychev/liferay-aui-upgrade-tool/issues/9) for more information.
 7. Replaces all occurences of new A.Dialog with Liferay.Util.Window.getWindow
+8. Adds &lt;portlet:namespace /&gt; to "name" attribute of "input" elements if not already namespaced.
 
 Running tests
 -------------
